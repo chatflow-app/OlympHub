@@ -77,9 +77,14 @@ def list_tasks(db: Session = Depends(get_db)):
     return db.query(models.Task).all()
 
 @app.post("/tasks")
-def create_task(task_data: schemas.TaskCreate, db: Session = Depends(get_db)):
-    new_task = models.Task(**task_data.dict())
+def create_task(task_data: dict, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Мы берем id из текущего пользователя, которого определили по токену
+    new_task = models.Task(
+        title=task_data["title"],
+        description=task_data["description"],
+        owner_id=current_user.id  # Вот здесь магия связи!
+    )
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
-    return {"message": "Задача добавлена", "id": new_task.id}
+    return new_task
